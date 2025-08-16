@@ -9,11 +9,36 @@ It is designed to be a simple, *drop-in* solution for developers who need to ens
 
 ## 📦 Installation
 
-Install directly from PyPI:
+Installation
+Option 1: Install from PyPI
 
-```bash
+You can install l8e-beam directly from the Python Package Index (PyPI) once it has been published.
+```
 pip install l8e-beam
-````
+```
+
+Option 2: Build and Install Locally
+
+If you are developing the package or want to install it directly from the source code, you can build it locally.
+
+1. Install Build Tools:
+First, ensure you have the necessary build tools installed.
+```
+pip install build
+```
+
+2. Build the Package:
+Run the build command from the root of the project directory (l8e-beam/).
+```
+python -m build
+```
+This command will create a dist/ directory containing the installable package files (a .whl wheel file and a .tar.gz source archive).
+
+3. Install the Local Package:
+You can now install the package using pip.
+```
+pip install dist/*.whl
+```
 
 ---
 
