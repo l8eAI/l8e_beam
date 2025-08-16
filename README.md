@@ -57,7 +57,7 @@ The core feature is the `@redact_pii` decorator, which can be configured to use 
 By default, the decorator uses a small, fast model (`ModelType.SM`) suitable for **general-purpose redaction**.
 
 ```python
-from pii_redactor import redact_pii, ModelType
+from l8e_beam import redact_pii, ModelType
 
 @redact_pii()  # Using the default ModelType.SM
 def process_user_query(query_data: dict):
@@ -82,7 +82,7 @@ redacted_info = process_user_query(user_info)
 For **complex text** or when **higher accuracy** is required, you can specify the transformer model (`ModelType.TRF`).
 
 ```python
-from pii_redactor import redact_pii, ModelType
+from l8e_beam import redact_pii, ModelType
 
 @redact_pii(model=ModelType.TRF)
 def process_complex_document(document: dict):
