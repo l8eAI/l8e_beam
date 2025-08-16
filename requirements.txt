@@ -1,0 +1,9 @@
+# For installing the package in editable mode
+-e .
+
+# For running tests
+pytest
+
+# For building and releasing the package
+build
+twine

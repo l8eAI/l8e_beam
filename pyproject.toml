@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "l8e-beam"
+version = "0.5.0"
+authors = [
+  { name="l8e (lighthouse)", email="support@l8e.tech" },
+]
+description = "A Python SDK with decorators for common utility for AI agents."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "spacy>=3.7.0,<3.8.0",
+]
+
+[project.urls]
+Homepage = "https://l8e.tech"
+Issues = "https://github.com/l8eAI/l8e_beam/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["l8e_beam"]
