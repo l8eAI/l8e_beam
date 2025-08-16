@@ -3,3 +3,4 @@
 # Include top-level documentation
 include README.md
 include LICENSE
+graft src/l8e_beam/model

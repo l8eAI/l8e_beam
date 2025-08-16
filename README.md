@@ -3,13 +3,13 @@
 **l8e-beam** is a Python SDK that provides simple, powerful decorators for preparing data for AI agent contexts.  
 Its primary features are robust **PII (Personally Identifiable Information) redaction** and **structured audit logging**.
 
-It is designed to be a simple, *drop-in* solution for developers who need to ensure data privacy and maintain traceability before passing data to language models or other AI systems.
+It is designed to be a simple, *drop-in* solution for developers who need to ensure **data privacy** and **maintain traceability** before passing data to language models or other AI systems.
 
 ---
 
-## Installation
+## 📦 Installation
 
-You can install **l8e-beam** directly from PyPI:
+Install directly from PyPI:
 
 ```bash
 pip install l8e-beam
@@ -17,19 +17,19 @@ pip install l8e-beam
 
 ---
 
-## Usage
+## 🚀 Usage
 
 The SDK provides decorators to easily add functionality to your data processing functions.
 
-### PII Redaction
+### 🔒 PII Redaction
 
-The core feature is the `@redact_pii` decorator, which can be configured to use different models depending on your needs for speed versus accuracy.
+The core feature is the `@redact_pii` decorator, which can be configured to use different models depending on your needs for **speed vs accuracy**.
 
 ---
 
-#### Basic Usage (Fast Model)
+#### ✅ Basic Usage (Fast Model)
 
-By default, the decorator uses a small, fast model (`ModelType.SM`) that is suitable for general-purpose redaction.
+By default, the decorator uses a small, fast model (`ModelType.SM`) suitable for **general-purpose redaction**.
 
 ```python
 from pii_redactor import redact_pii, ModelType
@@ -47,79 +47,89 @@ user_info = {
 }
 
 redacted_info = process_user_query(user_info)
-# redacted_info will be:
 # {'user': '[REDACTED]', 'query': 'Book a flight from [REDACTED] to [REDACTED] for me.'}
 ```
 
 ---
 
-#### High-Accuracy Usage (Transformer Model)
+#### 🎯 High-Accuracy Usage (Transformer Model)
 
-For text that is more complex or requires higher accuracy, you can specify the transformer model (`ModelType.TRF`).
+For **complex text** or when **higher accuracy** is required, you can specify the transformer model (`ModelType.TRF`).
 
 ```python
 from pii_redactor import redact_pii, ModelType
 
 @redact_pii(model=ModelType.TRF)
 def process_complex_document(document: dict):
-    # This will use the more powerful transformer model for redaction.
     return document
 
 document = {
     "author": "Paris Hilton",
     "destination": "Paris, France",
-    "company": "Hilton Hotels" 
+    "company": "Hilton Hotels"
 }
 
 redacted_document = process_complex_document(document)
-# redacted_document will be:
 # {'author': '[REDACTED]', 'destination': '[REDACTED], [REDACTED]', 'company': '[REDACTED]'}
 ```
 
 ---
 
-### Audit Logging (Work in Progress)
+### 📜 Audit Logging (WIP)
 
-The `@log_audit` decorator provides a simple way to create a structured audit trail for any function.
-It logs the function's inputs, outputs, and a timestamp as a JSON object, which is ideal for monitoring and debugging AI agent interactions.
-
-
----
-
-## Model Selection
-
-You can choose the model that best fits your use case by passing a `ModelType` enum member to the decorator.
-
-| Model           | ModelType Member | Accuracy (F-Score) | Size     | Speed | Use Case                                              |
-| --------------- | ---------------- | ------------------ | -------- | ----- | ----------------------------------------------------- |
-| **Small**       | `ModelType.SM`   | \~0.86             | \~12 MB  | Fast  | General purpose, high-throughput tasks.               |
-| **Transformer** | `ModelType.TRF`  | >0.90              | \~400 MB | Slow  | High-accuracy tasks, complex sentences, critical PII. |
-
-The **F-score** represents a balance between precision (how many entities found were correct) and recall (how many of the total entities were found). A higher score is better.
+The `@log_audit` decorator creates a structured audit trail for any function.
+It logs **inputs**, **outputs**, and a **timestamp** as a JSON object—ideal for monitoring and debugging AI agent interactions.
 
 ---
 
-## Design Decisions
+## 🕵️ What Information is Redacted?
 
-### Why Dictionary Keys Are Not Redacted
+PII redaction is powered by **spaCy’s Named Entity Recognition (NER)** models.
+The following entity types are currently targeted:
 
-The `@redact_pii` decorator is designed to recursively redact PII found in string **values** within any data structure (lists, dictionaries, etc.), but it intentionally does **not** redact dictionary keys.
+* **PERSON** → Names of people (e.g., `John Smith`)
+* **ORG** → Companies, agencies, institutions (e.g., `Google`, `Acme Corp`)
+* **GPE** → Countries, cities, states (e.g., `Germany`, `London`)
+* **LOC** → Non-GPE locations, mountains, water bodies (e.g., `Mount Everest`)
+* **DATE** → Dates, relative periods (e.g., `June 2024`, `yesterday`)
 
-This is a critical design choice to preserve the structural integrity of the data.
-Programs that receive the redacted data often rely on specific key names (e.g., `"user"`, `"location"`, `"id"`) to function correctly.
-
-Redacting these keys would likely break the downstream application.
-The primary goal is to protect the sensitive information contained in the values while ensuring the data remains usable.
+⚠️ **Note:** The decorator does **not** currently redact other PII types such as **emails, phone numbers, or credit card numbers**.
 
 ---
 
-## Running Tests
+## ⚡ Model Selection
 
-To run the test suite for this package:
+Choose the model that best fits your use case by passing a `ModelType` enum member to the decorator.
 
-1. Clone the repository.
+| Model           | ModelType Member | Accuracy (F-Score) | Size     | Speed | Best For                                             |
+| --------------- | ---------------- | ------------------ | -------- | ----- | ---------------------------------------------------- |
+| **Small**       | `ModelType.SM`   | \~0.86             | \~12 MB  | Fast  | General-purpose, high-throughput tasks               |
+| **Transformer** | `ModelType.TRF`  | >0.90              | \~400 MB | Slow  | High-accuracy tasks, complex sentences, critical PII |
 
-2. Install the development dependencies:
+🔹 The **F-score** balances **precision** (correct entities) and **recall** (entities found). A higher score is better.
+
+---
+
+## 🛠️ Design Decisions
+
+### ❓ Why Dictionary Keys Are Not Redacted
+
+The `@redact_pii` decorator redacts **string values** inside nested data structures (lists, dicts, etc.), but **does not redact dictionary keys**.
+
+* Keys (e.g., `"user"`, `"location"`, `"id"`) are essential for **program logic**.
+* Redacting them could **break downstream applications**.
+
+👉 This design ensures **sensitive values** are protected while keeping the data **usable**.
+
+---
+
+## 🧪 Running Tests
+
+To run the test suite:
+
+1. Clone the repository
+
+2. Install development dependencies:
 
    ```bash
    pip install -r requirements.txt
@@ -131,4 +141,22 @@ To run the test suite for this package:
    pytest
    ```
 
-```
+---
+
+## 📌 Roadmap
+
+* [ ] Expand redaction to cover emails, phone numbers, and financial identifiers
+* [ ] Extend audit logging with external storage backends (e.g., S3, BigQuery)
+* [ ] Add more granular control over entity types to redact
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request with improvements.
+
+---
+
+## 📄 License
+
+MIT License © 2025 l8e
