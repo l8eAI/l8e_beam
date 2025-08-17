@@ -180,6 +180,34 @@ To run the test suite:
 
 Contributions are welcome! Please open an issue or submit a pull request with improvements.
 
+### Development
+Building from Source using the Build Script
+
+The project includes a build.sh script to automate the entire setup, testing, and packaging process.
+
+1. Set up your environment:
+Ensure you are in an activated Python virtual environment.
+
+2. Make the script executable (only needs to be done once):
+
+```
+chmod +x build.sh
+```
+
+3. Run the script:
+
+```
+./build.sh
+```
+The script will download the necessary spaCy models, copy them into the source directory, run all the unit tests, and finally create the distributable .whl package in the dist/ folder.
+Running Tests Manually
+
+To run the test suite for this package:
+
+- Clone the repository.
+- Install the development dependencies: pip install -r requirements.txt
+- Run pytest: `pytest`
+
 ---
 
 ## 📄 License
