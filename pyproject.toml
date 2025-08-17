@@ -8,7 +8,8 @@ version = "0.5.0"
 authors = [
   { name="l8e (lighthouse)", email="support@l8e.tech" },
 ]
-description = "A Python SDK with decorators for common utility for AI agents."
+description = "A Python SDK for AI agent development, providing powerful decorators for PII redaction and audit logging. Ideal for preparing and securing data before processing with LLMs."
+keywords = ["pii", "redaction", "spacy", "decorator", "llm", "ai agent", "data privacy", "security", "nlp"]
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
