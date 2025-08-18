@@ -172,7 +172,7 @@ The system uses a **hybrid approach** of machine learning models and regular exp
 You can disable any of the following recognizers using the `disabled_recognizers` parameter and the `DefaultRecognizer` enum:
 
 * `EMAIL`, `PHONE`, `CREDIT_CARD` (from Regex)
-* `PERSON`, `ORG`, `GPE`, `LOC` (from spaCy NER)
+* `PERSON`, `ORG`, `GPE`, `LOC`, `DATE` (from spaCy NER)
 
 ### Validation for Precision
 
