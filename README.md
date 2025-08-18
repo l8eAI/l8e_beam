@@ -1,150 +1,149 @@
 # l8e-beam 빔
 
 **l8e-beam** is a Python SDK that provides simple, powerful decorators for preparing data for AI agent contexts.  
-Its primary features are robust **PII (Personally Identifiable Information) redaction** and **structured audit logging**.
+Its primary features are robust **PII (Personally Identifiable Information) protection** through **redaction** and **anonymization**.
 
-It is designed to be a simple, *drop-in* solution for developers who need to ensure **data privacy** and **maintain traceability** before passing data to language models or other AI systems.
+It is designed to be a simple, *drop-in* solution for developers who need to ensure **data privacy** before passing data to language models or other AI systems.
 
 ---
 
 ## 📦 Installation
 
-Installation
-Option 1: Install from PyPI
+You can install `l8e-beam` directly from the Python Package Index (PyPI):
 
-You can install l8e-beam directly from the Python Package Index (PyPI) once it has been published.
-```
+```bash
 pip install l8e-beam
-```
+````
 
-Option 2: Build and Install Locally
+Alternatively, to install in editable mode for development:
 
-If you are developing the package or want to install it directly from the source code, you can build it locally.
-
-1. Install Build Tools:
-First, ensure you have the necessary build tools installed.
-```
-pip install build
-```
-
-2. Build the Package:
-Run the build command from the root of the project directory (l8e-beam/).
-```
-python -m build
-```
-This command will create a dist/ directory containing the installable package files (a .whl wheel file and a .tar.gz source archive).
-
-3. Install the Local Package:
-You can now install the package using pip.
-```
-pip install dist/*.whl
+```bash
+pip install -e .
 ```
 
 ---
 
 ## 🚀 Usage
 
-The SDK provides decorators to easily add functionality to your data processing functions.
+The SDK's core feature is the `@redact_pii` decorator, which automatically processes the inputs and outputs of any function to handle sensitive data.
 
-### 🔒 PII Redaction
+### 🔒 PII Protection Actions
 
-The core feature is the `@redact_pii` decorator, which can be configured to use different models depending on your needs for **speed vs accuracy**.
+You can control the PII handling behavior by setting the `action` parameter in the decorator.
 
----
+#### 1. Redaction (Default)
 
-#### ✅ Basic Usage (Fast Model)
-
-By default, the decorator uses a small, fast model (`ModelType.SM`) suitable for **general-purpose redaction**.
+**Redaction** replaces detected PII with a placeholder label, indicating the *type* of information that was removed.
+Useful for completely scrubbing sensitive data.
 
 ```python
-from l8e_beam import redact_pii, ModelType
+from l8e_beam import redact_pii, PiiAction
 
-@redact_pii()  # Using the default ModelType.SM
-def process_user_query(query_data: dict):
-    # The 'query_data' dictionary will have all PII in its values redacted
-    # before this code runs.
-    print("Inside function:", query_data)
-    return query_data
+@redact_pii(action=PiiAction.REDACT) 
+def process_incident_report(report: dict):
+    # 'report' has its PII values replaced with placeholders.
+    print("Inside function:", report)
+    return report
 
-user_info = {
-    "user": "John Smith",
-    "query": "Book a flight from New York to London for me."
+incident_report = {
+    "details": "Client Susan Miller reported an outage in Berlin.",
+    "company": "affiliated with Acme Corporation"
 }
 
-redacted_info = process_user_query(user_info)
-# {'user': '[REDACTED]', 'query': 'Book a flight from [REDACTED] to [REDACTED] for me.'}
+redacted_report = process_incident_report(incident_report)
+# {'details': 'Client [PERSON] reported an outage in [GPE].', 
+#  'company': 'affiliated with [ORG]'}
 ```
 
 ---
 
-#### 🎯 High-Accuracy Usage (Transformer Model)
+#### 2. Anonymization
 
-For **complex text** or when **higher accuracy** is required, you can specify the transformer model (`ModelType.TRF`).
+**Anonymization** replaces detected PII with realistic-looking **fake data**.
+This is useful when you need to preserve the structure and format of the original data for testing or demonstrations.
 
 ```python
-from l8e_beam import redact_pii, ModelType
+from l8e_beam import redact_pii, PiiAction
 
-@redact_pii(model=ModelType.TRF)
-def process_complex_document(document: dict):
-    return document
+@redact_pii(action=PiiAction.ANONYMIZE)
+def create_test_user(profile: dict):
+    # 'profile' has its PII values replaced with fake data.
+    print("Inside function:", profile)
+    return profile
 
-document = {
-    "author": "Paris Hilton",
-    "destination": "Paris, France",
-    "company": "Hilton Hotels"
+user_profile = {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "555-867-5309"
 }
 
-redacted_document = process_complex_document(document)
-# {'author': '[REDACTED]', 'destination': '[REDACTED], [REDACTED]', 'company': '[REDACTED]'}
+anonymized_profile = create_test_user(user_profile)
+# {'name': 'Mary Smith', 
+#  'email': 'robertholmes@example.org', 
+#  'phone': '(555) 321-9876'}
 ```
 
 ---
 
-### 📜 Audit Logging (WIP)
+## 🕵️ What Information is Handled?
 
-The `@log_audit` decorator creates a structured audit trail for any function.
-It logs **inputs**, **outputs**, and a **timestamp** as a JSON object—ideal for monitoring and debugging AI agent interactions.
+The decorator uses a **hybrid approach**, combining machine learning models and regular expressions to detect a wide range of PII.
+
+### spaCy-Based Entities (NER)
+
+Powered by **spaCy’s Named Entity Recognition (NER)**, ideal for contextual information:
+
+* **PERSON**: Names of people (e.g., `John Smith`)
+* **ORG**: Companies, agencies, institutions (e.g., `Google`, `Acme Corp`)
+* **GPE**: Countries, cities, states (e.g., `Germany`, `London`)
+* **LOC**: Non-GPE locations, mountains, water bodies (e.g., `Mount Everest`)
+
+### Pattern-Based Entities (Regex)
+
+Powered by **regular expressions**, ideal for well-defined formats:
+
+* **EMAIL**: Email addresses
+* **PHONE**: Phone numbers
+* **CREDIT\_CARD**: Common credit card numbers
 
 ---
 
-## 🕵️ What Information is Redacted?
+## ✨ How It Works: Hybrid Detection and Validation
 
-PII redaction is powered by **spaCy’s Named Entity Recognition (NER)** models.
-The following entity types are currently targeted:
+`l8e-beam` uses a **robust, multi-stage process** to ensure both broad coverage and high accuracy in PII detection.
 
-* **PERSON** → Names of people (e.g., `John Smith`)
-* **ORG** → Companies, agencies, institutions (e.g., `Google`, `Acme Corp`)
-* **GPE** → Countries, cities, states (e.g., `Germany`, `London`)
-* **LOC** → Non-GPE locations, mountains, water bodies (e.g., `Mount Everest`)
-* **DATE** → Dates, relative periods (e.g., `June 2024`, `yesterday`)
+* **Hybrid Detection**: The system first uses a combination of methods to identify potential PII:
 
-⚠️ **Note:** The decorator does **not** currently redact other PII types such as **emails, phone numbers, or credit card numbers**.
+  * **spaCy NER**: For contextual data like names and locations.
+  * **Regular Expressions**: For structured data like email addresses and phone numbers.
+
+* **Validation for Precision**: For certain sensitive data types, detection is followed by a **validation step** to prevent false positives.
+
+  * Example: When a number matching a credit card format is found, it is checked against the **Luhn algorithm**.
+  * Only if the number passes this mathematical check is it flagged as PII.
+    ✅ This significantly increases precision by ensuring random numbers aren't mistakenly redacted.
 
 ---
 
 ## ⚡ Model Selection
 
-Choose the model that best fits your use case by passing a `ModelType` enum member to the decorator.
+For NER-based detection, you can choose a model that best fits your use case for **speed vs. accuracy**.
 
-| Model           | ModelType Member | Accuracy (F-Score) | Size     | Speed | Best For                                             |
-| --------------- | ---------------- | ------------------ | -------- | ----- | ---------------------------------------------------- |
-| **Small**       | `ModelType.SM`   | \~0.86             | \~12 MB  | Fast  | General-purpose, high-throughput tasks               |
-| **Transformer** | `ModelType.TRF`  | >0.90              | \~400 MB | Slow  | High-accuracy tasks, complex sentences, critical PII |
+| Model           | ModelType Member | Accuracy (F-Score) | Size     | Speed | Best For                               |
+| --------------- | ---------------- | ------------------ | -------- | ----- | -------------------------------------- |
+| **Small**       | `ModelType.SM`   | \~0.86             | \~12 MB  | Fast  | General-purpose, high-throughput tasks |
+| **Transformer** | `ModelType.TRF`  | >0.90              | \~400 MB | Slow  | High-accuracy tasks, complex sentences |
 
 🔹 The **F-score** balances **precision** (correct entities) and **recall** (entities found). A higher score is better.
 
----
+```python
+from l8e_beam import redact_pii, ModelType, PiiAction
 
-## 🛠️ Design Decisions
-
-### ❓ Why Dictionary Keys Are Not Redacted
-
-The `@redact_pii` decorator redacts **string values** inside nested data structures (lists, dicts, etc.), but **does not redact dictionary keys**.
-
-* Keys (e.g., `"user"`, `"location"`, `"id"`) are essential for **program logic**.
-* Redacting them could **break downstream applications**.
-
-👉 This design ensures **sensitive values** are protected while keeping the data **usable**.
+# Use the larger, more accurate model for sensitive documents
+@redact_pii(model=ModelType.TRF, action=PiiAction.REDACT)
+def process_legal_document(document_text: str):
+    return document_text
+```
 
 ---
 
@@ -152,14 +151,12 @@ The `@redact_pii` decorator redacts **string values** inside nested data structu
 
 To run the test suite:
 
-1. Clone the repository
-
+1. Clone the repository.
 2. Install development dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
-
 3. Run pytest:
 
    ```bash
@@ -170,46 +167,27 @@ To run the test suite:
 
 ## 📌 Roadmap
 
-* [ ] Expand redaction to cover emails, phone numbers, and financial identifiers
-* [ ] Extend audit logging with external storage backends (e.g., S3, BigQuery)
-* [ ] Add more granular control over entity types to redact
+* [x] **PII Redaction**: Replace PII with placeholders.
+* [x] **PII Anonymization**: Replace PII with realistic fake data.
+* [x] **Hybrid Detection**: Combine spaCy (NER) and Regex recognizers.
+* [ ] **Audit Logging**: Add a `@log_audit` decorator for structured JSON logging.
+* [ ] **Granular Control**: Allow users to specify exactly which PII types to handle.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request with improvements.
+Contributions are welcome! Please open an issue or submit a pull request.
 
-### Development
-Building from Source using the Build Script
+To set up a development environment, use the `build.sh` script, which will download the required spaCy models, run tests, and build the package:
 
-The project includes a build.sh script to automate the entire setup, testing, and packaging process.
-
-1. Set up your environment:
-Ensure you are in an activated Python virtual environment.
-
-2. Make the script executable (only needs to be done once):
-
-```
+```bash
 chmod +x build.sh
-```
-
-3. Run the script:
-
-```
 ./build.sh
 ```
-The script will download the necessary spaCy models, copy them into the source directory, run all the unit tests, and finally create the distributable .whl package in the dist/ folder.
-Running Tests Manually
-
-To run the test suite for this package:
-
-- Clone the repository.
-- Install the development dependencies: pip install -r requirements.txt
-- Run pytest: `pytest`
 
 ---
 
 ## 📄 License
 
-MIT License © 2025 l8e
+MIT License © 2025 **l8e**

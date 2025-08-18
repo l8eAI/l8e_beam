@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "l8e-beam"
-version = "0.5.0"
+version = "0.6.0"
 authors = [
   { name="l8e (lighthouse)", email="support@l8e.tech" },
 ]
@@ -19,12 +19,35 @@ classifiers = [
 ]
 dependencies = [
     "spacy>=3.7.0,<3.8.0",
+    "faker",
+    "spacy-transformers",
 ]
 
 [project.urls]
 Homepage = "https://l8e.tech"
 Issues = "https://github.com/l8eAI/l8e_beam/issues"
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["l8e_beam"]
+packages = { find = { where = ["src"] } }
+
+# Pytest configuration section
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "src/l8e_beam/tests",
+    "src/l8e_beam/recognizers/tests",
+]
+# Simplified addopts: coverage is now configured below
+addopts = "-ra -q --cov --cov-report=term-missing"
+
+# Dedicated coverage configuration section
+[tool.coverage.run]
+source = ["src/l8e_beam"]
+omit = ["*/tests/*"]

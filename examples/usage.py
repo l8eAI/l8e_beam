@@ -1,77 +1,117 @@
-# examples/usage.py
-
 # To run this example:
 # 1. Make sure you have installed the package in editable mode:
 #    pip install -e .
 # 2. Run this script from the root of the project:
 #    python examples/usage.py
 
-from l8e_beam import redact_pii, ModelType
+import pprint
+from l8e_beam import redact_pii, ModelType, PiiAction
 
-# --- Example 1: Using the default, fast 'SM' model ---
+# --- Example 1: Anonymizing with the default, fast 'SM' model ---
 
-@redact_pii() # Default is model=ModelType.SM
-def process_with_small_model(data: dict):
+@redact_pii(action=PiiAction.ANONYMIZE) # Default model is ModelType.SM
+def anonymize_user_profile(profile: dict):
     """
-    This function is decorated to use the small, fast spaCy model.
-    It's good for general cases but may miss some nuanced PII.
+    This function anonymizes a user profile using the small, fast spaCy model.
+    It replaces detected PII with realistic fake data.
     """
-    print("--- Inside function (SM Model) ---")
-    print(f"    Data received: {data}")
+    print("--- Inside anonymize_user_profile (SM Model) ---")
+    print("    Data has been processed. Now performing business logic...")
     
-    # In a real application, you would process the now-redacted data.
-    summary = (
-        f"Processed request for user '{data.get('user')}' "
-        f"regarding trip to '{data.get('destination')}'."
-    )
-    return {"summary": summary, "data": data}
+    # In a real app, you would now work with the anonymized data.
+    profile['status'] = 'processed'
+    return profile
 
+# --- Example 2: Anonymizing with the accurate 'TRF' (Transformer) model ---
 
-# --- Example 2: Using the accurate 'TRF' (Transformer) model ---
-
-@redact_pii(model=ModelType.TRF)
-def process_with_transformer_model(data: dict):
+@redact_pii(model=ModelType.TRF, action=PiiAction.ANONYMIZE)
+def anonymize_sensitive_notes(notes: str):
     """
-    This function is decorated to use the large, more accurate transformer model.
-    It's better at understanding context and catching tricky PII.
+    This function uses the large, more accurate transformer model to find
+    and anonymize PII that requires more contextual understanding.
     """
-    print("--- Inside function (TRF Model) ---")
-    print(f"    Data received: {data}")
+    print("\n--- Inside anonymize_sensitive_notes (TRF Model) ---")
+    print("    Notes have been processed.")
+    return notes
 
-    summary = (
-        f"Processed request for user '{data.get('user')}' "
-        f"regarding trip to '{data.get('destination')}'."
-    )
-    return {"summary": summary, "data": data}
+# --- Example 3: Redacting with the accurate 'TRF' (Transformer) model ---
 
+@redact_pii(model=ModelType.TRF, action=PiiAction.REDACT)
+def redact_incident_report(report: dict):
+    """
+    This function redacts a report using the transformer model. It replaces
+    PII with a placeholder label indicating the type of PII found.
+    """
+    print("\n--- Inside redact_incident_report (TRF Model) ---")
+    print("    Report has been processed.")
+    return report
+
+# --- Main execution block ---
 
 if __name__ == "__main__":
-    # Define a tricky piece of data. The name "Paris" can be a person or a place.
-    # The small model might get this wrong, but the transformer should understand the context.
-    user_data = {
-        "user": "Jane Doe",
-        "destination": "Paris, France",
-        "notes": "Meeting with John Smith about the new Acme Corp project."
+    # --- ANONYMIZE WITH SMALL MODEL ---
+    user_profile = {
+        "username": "jdoe_123",
+        "contact": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "phone": "555-867-5309"
+        },
+        "last_login_ip": "192.168.1.101"
     }
 
     print("="*60)
-    print("RUNNING WITH THE SMALL (SM) MODEL")
+    print("RUNNING ANONYMIZATION WITH THE SMALL (SM) MODEL")
     print("="*60)
-    sm_result = process_with_small_model(user_data)
-    print("\n--- Final Result (SM Model) ---")
-    print(sm_result)
+    print("\nOriginal User Profile:")
+    pprint.pprint(user_profile)
+
+    anonymized_profile = anonymize_user_profile(user_profile)
+
+    print("\nAnonymized User Profile:")
+    pprint.pprint(anonymized_profile)
+    
+    # --- ANONYMIZE WITH TRANSFORMER MODEL ---
+    sensitive_notes = (
+        "Project Alpha report: The project lead, May, will follow up. "
+        "Her colleague, April, confirmed the budget."
+    )
 
     print("\n" + "="*60)
-    print("RUNNING WITH THE LARGE (TRF) MODEL")
+    print("RUNNING ANONYMIZATION WITH THE LARGE (TRF) MODEL")
     print("="*60)
-    trf_result = process_with_transformer_model(user_data)
-    print("\n--- Final Result (TRF Model) ---")
-    print(trf_result)
+    print("\nOriginal Sensitive Notes:")
+    print(f'    "{sensitive_notes}"')
 
+    anonymized_notes = anonymize_sensitive_notes(sensitive_notes)
+
+    print("\nAnonymized Sensitive Notes:")
+    print(f'    "{anonymized_notes}"')
+
+    # --- REDACT WITH TRANSFORMER MODEL ---
+    incident_report = {
+        "incident_id": "INC-45892",
+        "details": "Client Susan Miller reported a service outage in Berlin.",
+        "assigned_to": "tech_ops",
+        "company": "affiliated with Acme Corporation"
+    }
+
+    print("\n" + "="*60)
+    print("RUNNING REDACTION WITH THE LARGE (TRF) MODEL")
+    print("="*60)
+    print("\nOriginal Incident Report:")
+    pprint.pprint(incident_report)
+
+    redacted_report = redact_incident_report(incident_report)
+
+    print("\nRedacted Incident Report:")
+    pprint.pprint(redacted_report)
+
+    # --- OBSERVATION ---
     print("\n" + "="*60)
     print("OBSERVATION")
     print("="*60)
-    print("Notice how the TRF model correctly identified 'Jane doe' as a person")
-    print("and 'Paris, France' as a location, redacting both. The SM model may")
-    print("have made mistakes, demonstrating the trade-off between speed and accuracy.")
-
+    print("1. ANONYMIZE replaces PII with realistic-looking fake data (e.g., 'John Doe' -> 'Mary Smith').")
+    print("2. REDACT replaces PII with a placeholder (e.g., 'Susan Miller' -> '[REDACTED PERSON]').")
+    print("3. The TRF model correctly understands that 'May' and 'April' are names in the context of the sentence,")
+    print("   while a less advanced model might mistake them for dates.")

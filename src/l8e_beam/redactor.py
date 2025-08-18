@@ -1,14 +1,16 @@
-import spacy
+from functools import wraps
+from typing import Dict, Any
 from importlib import resources
-from .enums import ModelType
+import spacy
 
-# --- 1. Setup and Model Loading ---
-# This part finds the bundled spaCy model within your package
-# and loads it into memory. It runs only once when the module is imported.
+# Import the main processor and the action/model enums
+from l8e_beam.recognizers.pii_processor import PiiProcessor
+from l8e_beam.enums import ModelType, PiiAction
 
-# Cache to store loaded models so we don't reload them every time.
+# Import the pre-loaded recognizer lists
+from l8e_beam.recognizers.recognizers import REGEX_RECOGNIZERS, SPACY_RECOGNIZERS
+
 _LOADED_MODELS = {}
-
 def _get_model(model: ModelType):
     """Loads a spaCy model from the package, caching it after first load."""
     if model in _LOADED_MODELS:
@@ -19,23 +21,47 @@ def _get_model(model: ModelType):
         _LOADED_MODELS[model] = nlp
         return nlp
 
-def _redact_text(text: str, nlp) -> str:
-    doc = nlp(text)
-    pii_labels = {"PERSON", "ORG", "GPE", "LOC", "DATE"}
-    new_text = list(text)
-    for ent in reversed(doc.ents):
-        if ent.label_ in pii_labels:
-            new_text[ent.start_char:ent.end_char] = "[REDACTED]"
-    return "".join(new_text)
+class PiiDecoratorBackend:
+    """
+    Manages PiiProcessor instances and handles the recursive processing
+    logic for the decorator. This class ensures that spaCy models are
+    loaded only once per model type and cached for efficiency.
+    """
+    # Class-level cache to store processor instances, keyed by model name
+    _PROCESSORS: Dict[str, PiiProcessor] = {}
 
-def _recursive_redact(data, nlp):
-    """Recursively traverses data structures to find and redact strings."""
-    if isinstance(data, str):
-        return _redact_text(data, nlp)
-    elif isinstance(data, dict):
-        return {k: _recursive_redact(v, nlp) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [_recursive_redact(item, nlp) for item in data]
-    # ... handle other iterable types as needed
-    else:
-        return data
+    def __init__(self, model: ModelType, action: PiiAction):
+        """
+        Initializes the backend with a specific model and action.
+
+        Args:
+            model (ModelType): The spaCy model to use for NER.
+            action (PiiAction): The PII action to perform (REDACT, ANONYMIZE, IGNORE).
+        """
+        self.model = model
+        self.nlp = _get_model(model)
+        self.action = action
+        self.processor = self._get_processor()
+
+    def _get_processor(self) -> PiiProcessor:
+        """
+        Retrieves a PiiProcessor from the cache or creates a new one if it
+        doesn't exist for the requested model.
+        """
+        model_name = self.model.value
+        if model_name not in self._PROCESSORS:
+            # If no processor exists for this model, create and cache it
+            print(f"Initializing PiiProcessor with model: {model_name}...")
+            self._PROCESSORS[model_name] = PiiProcessor(
+                regex_recognizers=REGEX_RECOGNIZERS,
+                spacy_recognizers=SPACY_RECOGNIZERS,
+                nlp=self.nlp
+            )
+        return self._PROCESSORS[model_name]
+
+    def process_data(self, data: Any) -> Any:
+        """
+        A wrapper around the processor's recursive method.
+        """
+        rdata = self.processor.process_recursive(data, action=self.action)
+        return rdata
