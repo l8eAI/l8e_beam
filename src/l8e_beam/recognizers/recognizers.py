@@ -4,7 +4,7 @@ import pathlib
 from typing import List
 
 # Import the base classes, as we need them for type checking
-from .base import Recognizer, RegexRecognizer, SpacyRecognizer
+from l8e_beam.recognizers.base import Recognizer, RegexRecognizer, SpacyRecognizer
 
 def load_recognizers() -> List[Recognizer]:
     """

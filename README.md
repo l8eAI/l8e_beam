@@ -1,58 +1,85 @@
 # l8e-beam 빔
 
-**l8e-beam** is a Python SDK that provides simple, powerful decorators for preparing data for AI agent contexts.  
+**l8e-beam** is a Python SDK that provides simple, powerful tools for preparing data for AI agent contexts.  
 Its primary features are robust **PII (Personally Identifiable Information) protection** through **redaction** and **anonymization**.
 
-It is designed to be a simple, *drop-in* solution for developers who need to ensure **data privacy** before passing data to language models or other AI systems.
+It is designed to be a flexible solution for developers who need to ensure **data privacy** before passing data to language models or other AI systems.
 
 ---
 
 ## 📦 Installation
 
-You can install `l8e-beam` directly from the Python Package Index (PyPI):
+This package is not yet available on the Python Package Index (PyPI) and must be installed from the source code.
 
-```bash
-pip install l8e-beam
-````
+### Option 1: Editable Install (for Development)
 
-Alternatively, to install in editable mode for development:
+If you are actively developing the package, an "editable" install is recommended. This allows your changes to be reflected immediately without needing to reinstall.
 
-```bash
+1. Clone the repository.
+2. Run the following command from the project's root directory:
+
+```
 pip install -e .
 ```
 
+### Option 2: Standard Install (from Source)
+
+This method builds the package into a wheel file and then installs it, which is closer to how a user would install it from PyPI.
+
+#### Step 1: Build the Package
+First, ensure you have the build tool installed (pip install build). Then, run the build command from the project root:
+```
+python -m build
+```
+
+This will create a dist/ directory containing the installable wheel file (e.g., l8e_beam-0.6.0-py3-none-any.whl).
+
+#### Step 2: Install the Wheel File
+Install the package using the wheel file from the dist/ directory:
+```
+pip install dist/l8e_beam-*.whl
+```
+
+
+
 ---
 
-## 🚀 Usage
+## 🚀 Two Ways to Sanitize PII
 
-The SDK's core feature is the `@redact_pii` decorator, which automatically processes the inputs and outputs of any function to handle sensitive data.
+This library offers two powerful methods for handling PII, catering to different needs:
 
-### 🔒 PII Protection Actions
+* **1. The Decorator (`@redact_pii`)**
+  The easiest way to protect data. Simply add it to your functions for automatic, "set-and-forget" PII protection on all inputs and outputs.
+  ✅ Best for **simple, comprehensive coverage**.
 
-You can control the PII handling behavior by setting the `action` parameter in the decorator.
+* **2. The Direct API (`sanitize_pii`)**
+  A flexible function for advanced use cases. It gives you granular control to process specific data blobs, add custom rules, or disable default ones on the fly.
+  ✅ Best for **complex, dynamic, or non-decorator workflows**.
+
+---
+
+## ✅ Simple Usage: The `@redact_pii` Decorator
+
+The decorator is the quickest way to secure a function.
+
+### PII Protection Actions
+
+You can control the behavior by setting the `action` parameter.
 
 #### 1. Redaction (Default)
 
-**Redaction** replaces detected PII with a placeholder label, indicating the *type* of information that was removed.
-Useful for completely scrubbing sensitive data.
+**Redaction** replaces detected PII with a placeholder label.
 
 ```python
 from l8e_beam import redact_pii, PiiAction
 
 @redact_pii(action=PiiAction.REDACT) 
 def process_incident_report(report: dict):
-    # 'report' has its PII values replaced with placeholders.
-    print("Inside function:", report)
     return report
 
-incident_report = {
-    "details": "Client Susan Miller reported an outage in Berlin.",
-    "company": "affiliated with Acme Corporation"
-}
-
+incident_report = {"details": "Client Susan Miller reported an outage in Berlin."}
 redacted_report = process_incident_report(incident_report)
-# {'details': 'Client [PERSON] reported an outage in [GPE].', 
-#  'company': 'affiliated with [ORG]'}
+# {'details': 'Client [PERSON] reported an outage in [GPE].'}
 ```
 
 ---
@@ -60,104 +87,126 @@ redacted_report = process_incident_report(incident_report)
 #### 2. Anonymization
 
 **Anonymization** replaces detected PII with realistic-looking **fake data**.
-This is useful when you need to preserve the structure and format of the original data for testing or demonstrations.
 
 ```python
 from l8e_beam import redact_pii, PiiAction
 
 @redact_pii(action=PiiAction.ANONYMIZE)
 def create_test_user(profile: dict):
-    # 'profile' has its PII values replaced with fake data.
-    print("Inside function:", profile)
     return profile
 
-user_profile = {
-    "name": "John Doe",
-    "email": "john.doe@example.com",
-    "phone": "555-867-5309"
-}
-
+user_profile = {"name": "John Doe", "email": "john.doe@example.com"}
 anonymized_profile = create_test_user(user_profile)
-# {'name': 'Mary Smith', 
-#  'email': 'robertholmes@example.org', 
-#  'phone': '(555) 321-9876'}
+# {'name': 'Mary Smith', 'email': 'robertholmes@example.org'}
+```
+
+---
+
+## 🛠️ Advanced Usage: The `sanitize_pii` API
+
+For full control, use the `sanitize_pii` function directly. This is ideal when you need to process a piece of data dynamically or apply custom rules.
+
+```python
+from l8e_beam import sanitize_pii, PiiAction
+
+data = "Send the report to jane.doe@example.com"
+processed_data = sanitize_pii(data, action=PiiAction.ANONYMIZE)
+# 'Send the report to sarahjones@example.com'
+```
+
+### Disabling Default Recognizers
+
+You can easily disable default recognizers by passing a list of `DefaultRecognizer` enums.
+This is useful for preventing certain PII types from being processed.
+
+```python
+from l8e_beam import sanitize_pii, PiiAction, DefaultRecognizer
+
+report = "Contact support at help@example.com about the issue with John Smith."
+
+# Redact the person's name, but leave the email address untouched
+processed_report = sanitize_pii(
+    report,
+    action=PiiAction.REDACT,
+    disabled_recognizers=[DefaultRecognizer.EMAIL]
+)
+# 'Contact support at help@example.com about the issue with [PERSON].'
+```
+
+### Adding a Custom Recognizer
+
+The most powerful feature of the API is the ability to add your own recognizers on the fly.
+
+```python
+import re
+import uuid
+from l8e_beam import sanitize_pii, RegexRecognizer, PiiAction
+
+# 1. Define your custom recognizer class
+class UuidRecognizer(RegexRecognizer):
+    name = "UUID"
+    regex = re.compile(r"[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}", re.I)
+
+# 2. Create an instance of it
+my_uuid_recognizer = UuidRecognizer()
+
+log_entry = f"Request failed for user_id: {uuid.uuid4()}"
+
+# 3. Pass it to the API
+processed_log = sanitize_pii(
+    log_entry,
+    action=PiiAction.REDACT,
+    custom_recognizers=[my_uuid_recognizer]
+)
+# 'Request failed for user_id: [UUID]'
 ```
 
 ---
 
 ## 🕵️ What Information is Handled?
 
-The decorator uses a **hybrid approach**, combining machine learning models and regular expressions to detect a wide range of PII.
+The system uses a **hybrid approach** of machine learning models and regular expressions.
 
-### spaCy-Based Entities (NER)
+### Controllable Default Recognizers
 
-Powered by **spaCy’s Named Entity Recognition (NER)**, ideal for contextual information:
+You can disable any of the following recognizers using the `disabled_recognizers` parameter and the `DefaultRecognizer` enum:
 
-* **PERSON**: Names of people (e.g., `John Smith`)
-* **ORG**: Companies, agencies, institutions (e.g., `Google`, `Acme Corp`)
-* **GPE**: Countries, cities, states (e.g., `Germany`, `London`)
-* **LOC**: Non-GPE locations, mountains, water bodies (e.g., `Mount Everest`)
+* `EMAIL`, `PHONE`, `CREDIT_CARD` (from Regex)
+* `PERSON`, `ORG`, `GPE`, `LOC` (from spaCy NER)
 
-### Pattern-Based Entities (Regex)
+### Validation for Precision
 
-Powered by **regular expressions**, ideal for well-defined formats:
-
-* **EMAIL**: Email addresses
-* **PHONE**: Phone numbers
-* **CREDIT\_CARD**: Common credit card numbers
-
----
-
-## ✨ How It Works: Hybrid Detection and Validation
-
-`l8e-beam` uses a **robust, multi-stage process** to ensure both broad coverage and high accuracy in PII detection.
-
-* **Hybrid Detection**: The system first uses a combination of methods to identify potential PII:
-
-  * **spaCy NER**: For contextual data like names and locations.
-  * **Regular Expressions**: For structured data like email addresses and phone numbers.
-
-* **Validation for Precision**: For certain sensitive data types, detection is followed by a **validation step** to prevent false positives.
-
-  * Example: When a number matching a credit card format is found, it is checked against the **Luhn algorithm**.
-  * Only if the number passes this mathematical check is it flagged as PII.
-    ✅ This significantly increases precision by ensuring random numbers aren't mistakenly redacted.
+For certain PII types like credit cards, a validation step (e.g., the **Luhn algorithm**) is performed after detection.
+This reduces false positives and increases accuracy.
 
 ---
 
 ## ⚡ Model Selection
 
-For NER-based detection, you can choose a model that best fits your use case for **speed vs. accuracy**.
+For NER-based detection, you can choose a model that best fits your use case.
 
-| Model           | ModelType Member | Accuracy (F-Score) | Size     | Speed | Best For                               |
-| --------------- | ---------------- | ------------------ | -------- | ----- | -------------------------------------- |
-| **Small**       | `ModelType.SM`   | \~0.86             | \~12 MB  | Fast  | General-purpose, high-throughput tasks |
-| **Transformer** | `ModelType.TRF`  | >0.90              | \~400 MB | Slow  | High-accuracy tasks, complex sentences |
-
-🔹 The **F-score** balances **precision** (correct entities) and **recall** (entities found). A higher score is better.
+| Model           | ModelType Member | Accuracy | Size     | Speed | Best For                    |
+| --------------- | ---------------- | -------- | -------- | ----- | --------------------------- |
+| **Small**       | `ModelType.SM`   | \~0.86   | \~12 MB  | Fast  | General-purpose tasks       |
+| **Transformer** | `ModelType.TRF`  | >0.90    | \~400 MB | Slow  | High-accuracy, complex text |
 
 ```python
-from l8e_beam import redact_pii, ModelType, PiiAction
-
-# Use the larger, more accurate model for sensitive documents
-@redact_pii(model=ModelType.TRF, action=PiiAction.REDACT)
-def process_legal_document(document_text: str):
-    return document_text
+# The model can be specified in both the decorator and the direct API
+from l8e_beam import sanitize_pii, ModelType
+processed_text = sanitize_pii(text, model=ModelType.TRF)
 ```
 
 ---
 
 ## 🧪 Running Tests
 
-To run the test suite:
-
 1. Clone the repository.
-2. Install development dependencies:
+2. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
-3. Run pytest:
+3. Run tests:
 
    ```bash
    pytest
@@ -167,19 +216,17 @@ To run the test suite:
 
 ## 📌 Roadmap
 
-* [x] **PII Redaction**: Replace PII with placeholders.
-* [x] **PII Anonymization**: Replace PII with realistic fake data.
-* [x] **Hybrid Detection**: Combine spaCy (NER) and Regex recognizers.
-* [ ] **Audit Logging**: Add a `@log_audit` decorator for structured JSON logging.
-* [ ] **Granular Control**: Allow users to specify exactly which PII types to handle.
+* [x] **PII Redaction & Anonymization**
+* [x] **Hybrid Detection** (NER + Regex) with Validation
+* [x] **Decorator & Advanced API** Interfaces
+* [ ] **Audit Logging**: Add a `@log_audit` decorator.
+* [ ] **Granular Control**: Allow specifying which PII types to *enable*, not just disable.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
-
-To set up a development environment, use the `build.sh` script, which will download the required spaCy models, run tests, and build the package:
+Contributions are welcome! To set up a development environment, use the `build.sh` script:
 
 ```bash
 chmod +x build.sh

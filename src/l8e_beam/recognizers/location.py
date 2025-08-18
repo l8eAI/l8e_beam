@@ -1,8 +1,10 @@
-from .base import SpacyRecognizer
+from l8e_beam.recognizers.base import SpacyRecognizer
+from l8e_beam.recognizers.enums import DEFAULT_RECOGNIZERS
+
 
 class LocRecognizer(SpacyRecognizer):
-    name = "LOC" # Location (non-GPE locations, mountains, bodies of water)
-    label = "LOC"
+    name = DEFAULT_RECOGNIZERS.LOCATION.value # Location (non-GPE locations, mountains, bodies of water)
+    label = name
 
     def anonymize(self, text: str) -> str:
         return self.faker.address()

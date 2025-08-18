@@ -1,9 +1,10 @@
 import re
-from .base import RegexRecognizer
+from l8e_beam.recognizers.base import RegexRecognizer
+from l8e_beam.recognizers.enums import DEFAULT_RECOGNIZERS
 
 # Example 2: Recognizer with a custom validator (Luhn Check)
 class CreditCardRecognizer(RegexRecognizer):
-    name = "CREDIT_CARD"
+    name = DEFAULT_RECOGNIZERS.CREDIT_CARD.value
     regex = re.compile(r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13})\b")
 
     def validate(self, text: str) -> bool:
