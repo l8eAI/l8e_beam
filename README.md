@@ -197,6 +197,40 @@ processed_text = sanitize_pii(text, model=ModelType.TRF)
 ```
 
 ---
+## 🔄 Working with Data Structures
+
+The l8e-beam processor can recursively traverse and sanitize nested data structures.
+
+### Supported Types
+
+- Primitives: str
+- Collections: dict, list, tuple
+
+#### Automatic Pydantic & Custom Object Support
+
+The processor will automatically handle any object that has a .dict() method, such as a Pydantic model.
+It converts the object to a dictionary, sanitizes its values, and then reconstructs the original object, preserving its type.
+```
+from pydantic import BaseModel
+from l8e_beam import redact_pii, PiiAction
+
+class UserContext(BaseModel):
+    user_id: str
+    full_name: str
+
+@redact_pii(action=PiiAction.REDACT)
+def process_context(context: UserContext):
+    # The 'context' object is sanitized before this code runs,
+    # but it remains a UserContext instance.
+    return context
+
+user_data = UserContext(user_id="abc-123", full_name="Jane Doe")
+processed_context = process_context(user_data)
+
+# The returned object is still a UserContext, with sanitized data:
+# UserContext(user_id='abc-123', full_name='[PERSON]')
+```
+---
 
 ## 🧪 Running Tests
 

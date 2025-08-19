@@ -93,6 +93,17 @@ class PiiProcessor:
         # FIX: Added a condition to handle tuples
         elif isinstance(data, tuple):
             return tuple(self.process_recursive(item, action) for item in data)
+        elif hasattr(data, 'dict') and callable(getattr(data, 'dict')):
+            # Convert to a dict and process its values
+            sanitized_dict = self.process_recursive(data.dict(), action)
+            # Get the original class of the object
+            original_class = type(data)
+            try:
+                # Re-create the object from the sanitized dict
+                return original_class(**sanitized_dict)
+            except TypeError:
+                # Fallback for objects that can't be re-instantiated this way
+                return sanitized_dict
         else:
             # For any other data type, return it unchanged
             return data
