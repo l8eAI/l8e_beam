@@ -116,11 +116,11 @@ processed_data = sanitize_pii(data, action=PiiAction.ANONYMIZE)
 
 ### Disabling Default Recognizers
 
-You can easily disable default recognizers by passing a list of `DefaultRecognizer` enums.
+You can easily disable default recognizers by passing a list of `DEFAULT_RECOGNIZERS` enums.
 This is useful for preventing certain PII types from being processed.
 
 ```python
-from l8e_beam import sanitize_pii, PiiAction, DefaultRecognizer
+from l8e_beam import sanitize_pii, PiiAction, DEFAULT_RECOGNIZERS
 
 report = "Contact support at help@example.com about the issue with John Smith."
 
@@ -128,7 +128,7 @@ report = "Contact support at help@example.com about the issue with John Smith."
 processed_report = sanitize_pii(
     report,
     action=PiiAction.REDACT,
-    disabled_recognizers=[DefaultRecognizer.EMAIL]
+    disabled_recognizers=[DEFAULT_RECOGNIZERS.EMAIL]
 )
 # 'Contact support at help@example.com about the issue with [PERSON].'
 ```
@@ -169,7 +169,7 @@ The system uses a **hybrid approach** of machine learning models and regular exp
 
 ### Controllable Default Recognizers
 
-You can disable any of the following recognizers using the `disabled_recognizers` parameter and the `DefaultRecognizer` enum:
+You can disable any of the following recognizers using the `disabled_recognizers` parameter and the `DEFAULT_RECOGNIZERS` enum:
 
 * `EMAIL`, `PHONE`, `CREDIT_CARD` (from Regex)
 * `PERSON`, `ORG`, `GPE`, `LOC`, `DATE` (from spaCy NER)
