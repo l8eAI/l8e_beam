@@ -6,4 +6,4 @@ set -e
 pip install pdoc
 
 # Generate the documentation from your source code
-pdoc src/l8e_beam -o docs/
+pdoc ../src/l8e_beam -o docs/

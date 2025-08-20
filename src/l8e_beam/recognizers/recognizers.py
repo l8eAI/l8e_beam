@@ -6,6 +6,7 @@ from typing import List
 # Import the base classes, as we need them for type checking
 from l8e_beam.recognizers.base import Recognizer, RegexRecognizer, SpacyRecognizer
 
+
 def load_recognizers() -> List[Recognizer]:
     """
     Dynamically discovers and instantiates all Recognizer classes
@@ -23,7 +24,7 @@ def load_recognizers() -> List[Recognizer]:
         # Convert file path to module path for import
         # e.g., /path/to/credit_card.py -> .credit_card
         module_name = f".{file_path.stem}"
-        
+
         # Dynamically import the module
         module = importlib.import_module(module_name, package=__package__)
 
@@ -32,7 +33,7 @@ def load_recognizers() -> List[Recognizer]:
             # Check if it's a concrete subclass of Recognizer
             if (issubclass(member, Recognizer) and member not in 
                     [Recognizer, RegexRecognizer, SpacyRecognizer]):
-                recognizer_instances.append(member())
+                    recognizer_instances.append(member())
                 
     return recognizer_instances
 

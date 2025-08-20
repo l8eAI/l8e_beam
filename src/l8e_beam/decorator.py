@@ -7,6 +7,7 @@ from l8e_beam.enums import ModelType, PiiAction
 
 
 def redact_pii(model: ModelType = ModelType.SM, action: PiiAction = PiiAction.REDACT):
+
     """
     A decorator to process PII in the inputs and outputs of a function.
 
@@ -16,6 +17,7 @@ def redact_pii(model: ModelType = ModelType.SM, action: PiiAction = PiiAction.RE
         action (PiiAction): The action to perform on found PII (REDACT,
                             ANONYMIZE, or IGNORE).
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

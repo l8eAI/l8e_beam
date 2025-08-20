@@ -18,6 +18,7 @@ from l8e_beam import redact_pii, sanitize_pii, PiiAction, ModelType
 # --- 1. Define a Pydantic model for our request body ---
 # This represents the data structure our API will accept.
 class UserContext(BaseModel):
+
     user_id: str
     full_name: str
     query: str
@@ -42,6 +43,7 @@ def process_with_decorator(context: UserContext):
     It will automatically anonymize the incoming user context.
     """
     print(f"Inside decorator endpoint. Data received: {context.dict()}")
+
     
     # In a real application, you would now pass this sanitized context
     # to a language model or another service.
@@ -103,4 +105,3 @@ if __name__ == "__main__":
     print("uvicorn examples.integrate_fastapi:app --reload")
     # This block is for informational purposes; uvicorn is the preferred way to run.
     # uvicorn.run(app, host="0.0.0.0", port=8000)
-

@@ -48,6 +48,7 @@ def redact_incident_report(report: dict):
 
 # --- Main execution block ---
 
+
 if __name__ == "__main__":
     # --- ANONYMIZE WITH SMALL MODEL ---
     user_profile = {

@@ -7,6 +7,7 @@ from l8e_beam import sanitize_pii, RegexRecognizer, PiiAction, DEFAULT_RECOGNIZE
 
 # --- Setup for Example 3: Define a custom recognizer ---
 class UuidRecognizer(RegexRecognizer):
+
     """A custom recognizer to find and handle UUIDs."""
     name = "UUID"
     regex = re.compile(
@@ -14,11 +15,13 @@ class UuidRecognizer(RegexRecognizer):
         re.IGNORECASE
     )
 
+
     def anonymize(self, text: str) -> str:
         """Define how to create a fake UUID."""
         return str(uuid.uuid4())
 
 # --- Main execution block ---
+
 if __name__ == "__main__":
     print("="*60)
     print("Advanced API Usage: sanitize_pii")

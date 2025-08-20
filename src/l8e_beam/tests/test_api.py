@@ -6,6 +6,7 @@ from l8e_beam.recognizers.enums import DEFAULT_RECOGNIZERS
 
 
 class TestSanitizePiiApi(unittest.TestCase):
+
     """Unit tests for the sanitize_pii API function."""
 
 
@@ -50,6 +51,7 @@ class TestSanitizePiiApi(unittest.TestCase):
         """
         Test that default recognizers can be disabled.
         """
+
         # FIX: Create mocks and set their .name attribute directly.
         mock_email = Mock()
         mock_email.name = 'EMAIL'

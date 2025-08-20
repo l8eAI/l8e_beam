@@ -11,6 +11,7 @@ from l8e_beam.enums import ModelType, PiiAction
 from l8e_beam.recognizers.recognizers import REGEX_RECOGNIZERS, SPACY_RECOGNIZERS
 
 _LOADED_MODELS = {}
+
 def _get_model(model: ModelType):
     """Loads a spaCy model from the package, caching it after first load."""
     if model in _LOADED_MODELS:
@@ -20,6 +21,7 @@ def _get_model(model: ModelType):
         nlp = spacy.load(model_path)
         _LOADED_MODELS[model] = nlp
         return nlp
+
 
 class PiiDecoratorBackend:
     """
@@ -43,6 +45,7 @@ class PiiDecoratorBackend:
         self.action = action
         self.processor = self._get_processor()
 
+
     def _get_processor(self) -> PiiProcessor:
         """
         Retrieves a PiiProcessor from the cache or creates a new one if it
@@ -58,6 +61,7 @@ class PiiDecoratorBackend:
                 nlp=self.nlp
             )
         return self._PROCESSORS[model_name]
+
 
     def process_data(self, data: Any) -> Any:
         """
