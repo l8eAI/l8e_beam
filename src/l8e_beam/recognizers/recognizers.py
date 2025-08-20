@@ -1,3 +1,20 @@
+# src/l8e_beam/recognizers/recognizers.py
+
+"""
+Automatic discovery and loading of all available PII recognizers.
+
+This module dynamically imports all other Python files in this directory
+to find and instantiate any classes that are subclasses of `Recognizer`.
+It then categorizes them into lists based on their type (`RegexRecognizer`
+or `SpacyRecognizer`).
+
+This makes the recognizer system pluggable: to add a new default recognizer,
+you simply need to add a new file in this directory with a class that
+inherits from one of the base recognizer classes. This script will
+automatically discover and load it.
+
+The pre-populated lists are used to initialize the `PiiProcessor`.
+"""
 import importlib
 import inspect
 import pathlib
@@ -9,8 +26,16 @@ from l8e_beam.recognizers.base import Recognizer, RegexRecognizer, SpacyRecogniz
 
 def load_recognizers() -> List[Recognizer]:
     """
-    Dynamically discovers and instantiates all Recognizer classes
-    in this directory.
+    Dynamically discovers and instantiates all recognizer classes.
+
+    It scans the specified directory for `.py` files, imports them,
+    and finds any subclasses of `Recognizer`.
+
+    Args:
+        directory: The directory to scan for recognizer files.
+
+    Returns:
+        A list of instantiated recognizer objects.
     """
     recognizer_instances = []
     package_dir = pathlib.Path(__file__).resolve().parent

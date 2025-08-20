@@ -7,15 +7,40 @@ from l8e_beam.enums import ModelType, PiiAction
 
 
 def redact_pii(model: ModelType = ModelType.SM, action: PiiAction = PiiAction.REDACT):
-
     """
-    A decorator to process PII in the inputs and outputs of a function.
+    A decorator to automatically process PII in a function's arguments and return value.
+
+    This is the easiest way to secure an endpoint or function. It recursively
+    scans `args` and `kwargs`, processes any strings, dictionaries, lists, or
+    Pydantic models, and then does the same for the function's output.
 
     Args:
-        model (ModelType): The spaCy model to use (e.g., ModelType.SM for the
-                           small model, ModelType.LG for the large one).
-        action (PiiAction): The action to perform on found PII (REDACT,
-                            ANONYMIZE, or IGNORE).
+        model (ModelType): The spaCy model to use for NER-based PII detection.
+            - `ModelType.SM`: A small, fast, general-purpose model.
+            - `ModelType.TRF`: A large, slower, but more accurate transformer model.
+        action (PiiAction): The action to perform on found PII.
+            - `PiiAction.REDACT`: Replaces PII with a placeholder (e.g., `[REDACTED PERSON]`).
+            - `PiiAction.ANONYMIZE`: Replaces PII with realistic fake data.
+            - `PiiAction.IGNORE`: Leaves the PII untouched.
+
+    Returns:
+        The decorated function, which will have its inputs and outputs sanitized.
+
+    Example:
+        ```python
+        from l8e_beam import redact_pii, PiiAction
+
+        @redact_pii(action=PiiAction.ANONYMIZE)
+        def create_test_user(profile: dict):
+            # The profile dictionary is already anonymized
+            # before this code runs.
+            return profile
+
+        user_profile = {"name": "John Doe", "email": "john.doe@example.com"}
+        anonymized_profile = create_test_user(user_profile)
+        # anonymized_profile will be something like:
+        # {'name': 'Mary Smith', 'email': 'robertholmes@example.org'}
+        ```
     """
 
     def decorator(func):

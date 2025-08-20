@@ -1,8 +1,10 @@
+"""A recognizer for detecting person names."""
 from l8e_beam.recognizers.base import SpacyRecognizer
 from l8e_beam.recognizers.enums import DEFAULT_RECOGNIZERS
 
 
 class PersonRecognizer(SpacyRecognizer):
+    """Detects person names using the 'PERSON' entity from a spaCy model."""
     name = DEFAULT_RECOGNIZERS.PERSON.value
     label = name
     

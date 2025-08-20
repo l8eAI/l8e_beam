@@ -1,3 +1,14 @@
+# src/l8e_beam/recognizers/pii_processor.py
+
+"""
+The core PII processing engine.
+
+This module contains the `PiiProcessor` class, which is responsible for
+orchestrating the entire PII detection and sanitization process. It manages
+all the registered recognizers and applies the requested action (redact,
+anonymize, or ignore) to the findings.
+"""
+
 from l8e_beam.enums import PiiAction, ModelType
 # from .base import Finding, RegexRecognizer, SpacyRecognizer
 from typing import List, Any
@@ -5,25 +16,41 @@ import spacy
 
 
 class PiiProcessor:
+    """
+    Orchestrates all recognizers to find, sort, and process PII in text
+    and other data structures.
+    """
     def __init__(
         self,
         regex_recognizers: List, # List[RegexRecognizer]
         spacy_recognizers: List, # List[SpacyRecognizer]
         nlp: spacy.Language
     ):
+        """
+        Initializes the PiiProcessor.
+
+        Args:
+            regex_recognizers: A list of instantiated `RegexRecognizer` objects.
+            spacy_recognizers: A list of instantiated `SpacyRecognizer` objects.
+            nlp: A loaded spaCy language model.
+        """
         self.regex_recognizers = regex_recognizers
         self.spacy_recognizers = spacy_recognizers
         self.nlp = nlp
 
     def get_findings(self, text: str) -> List: # List[Finding]
         """
-        Orchestrates all recognizers to find PII in the text.
+        Finds all PII in a string by running all registered recognizers.
 
-        This method:
-        1. Runs all regex-based recognizers.
-        2. Runs the spaCy NLP model once for efficiency.
-        3. Runs all spaCy-based recognizers on the processed text.
-        4. Returns a single, consolidated list of all findings.
+        This method optimizes the process by running the spaCy NLP model
+        only once on the text, then passing the processed `Doc` object to all
+        spaCy-based recognizers.
+
+        Args:
+            text: The input text to scan.
+
+        Returns:
+            A list of all `Finding` objects, consolidated from all recognizers.
         """
         findings = []
         
@@ -42,12 +69,17 @@ class PiiProcessor:
 
     def process(self, text: str, action: PiiAction = PiiAction.REDACT) -> str:
         """
-        Finds and processes all PII in a string based on the specified action.
+        Applies a PII action to a single string.
+
+        It gets all findings, sorts them to handle overlaps correctly, and then
+        rebuilds the string with the PII either redacted, anonymized, or ignored.
 
         Args:
-            text (str): The input text.
-            action (PiiAction): The action to perform (REDACT or ANONYMIZE).
-                                Defaults to REDACT.
+            text: The input text.
+            action: The action to perform on the PII.
+
+        Returns:
+            The processed string.
         """
         findings = self.get_findings(text)
         if not findings:
@@ -82,7 +114,17 @@ class PiiProcessor:
     
     def process_recursive(self, data: Any, action: PiiAction) -> Any:
         """
-        Recursively traverses data structures (dicts, lists, tuples) to process strings.
+        Recursively traverses data structures to process all string values.
+
+        This method can handle nested dictionaries, lists, and tuples, as well
+        as any object with a `.dict()` method (like Pydantic models).
+
+        Args:
+            data: The data structure to process.
+            action: The PII action to apply.
+
+        Returns:
+            A new data structure of the same type with all strings processed.
         """
         if isinstance(data, str):
             return self.process(data, action)

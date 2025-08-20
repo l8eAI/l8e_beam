@@ -18,12 +18,54 @@ def sanitize_pii(
     """
     A direct API for processing data with fine-grained control over recognizers.
 
+    This function recursively traverses data structures (dictionaries, lists, tuples)
+    and processes any strings found. It is ideal for complex, dynamic, or
+    non-decorator workflows where you need full control.
+
     Args:
-        data: The data to process.
-        action: The PII action to perform.
-        model: The spaCy model to use for NER.
+        data: The data to process (e.g., a string, dictionary, list).
+        action: The PII action to perform (`REDACT`, `ANONYMIZE`, or `IGNORE`).
+        model: The spaCy model to use for NER (`SM` or `TRF`).
         custom_recognizers: A list of user-defined recognizer instances to add.
-        disabled_recognizers: A list of names of default recognizers to disable.
+        disabled_recognizers: A list of default recognizers to disable.
+
+    Returns:
+        The processed data with PII handled according to the specified action.
+
+    Example (Disabling a Recognizer):
+        ```python
+        from l8e_beam import sanitize_pii, PiiAction, DEFAULT_RECOGNIZERS
+
+        report = "Contact support@example.com about the issue with John Smith."
+
+        # Redact the person's name, but leave the email address untouched
+        processed_report = sanitize_pii(
+            report,
+            action=PiiAction.REDACT,
+            disabled_recognizers=[DEFAULT_RECOGNIZERS.EMAIL]
+        )
+        # 'Contact support@example.com about the issue with [REDACTED PERSON].'
+        ```
+
+    Example (Adding a Custom Recognizer):
+        ```python
+        import re
+        from l8e_beam import sanitize_pii, RegexRecognizer, PiiAction
+
+        # 1. Define your custom recognizer class
+        class UuidRecognizer(RegexRecognizer):
+            name = "UUID"
+            regex = re.compile(r"[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}", re.I)
+
+        # 2. Pass an instance to the API
+        log_entry = "Request failed for user_id: 123e4567-e89b-12d3-a456-426614174000"
+        processed_log = sanitize_pii(
+            log_entry,
+            action=PiiAction.REDACT,
+            custom_recognizers=[UuidRecognizer()]
+        )
+        # 'Request failed for user_id: [REDACTED UUID]'
+        ```
     """
     nlp = _get_model(model)
     custom_recognizers = custom_recognizers or []
